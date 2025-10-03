@@ -13,14 +13,20 @@
 #### エンティティ
 - [x] `FridgeItem` - 冷蔵庫アイテム
 - [x] `HistoryRecord` - 履歴レコード
+- [x] `MealPlan` - 献立
+- [x] `Allergen` - アレルゲン
 
 #### 値オブジェクト
 - [x] `TransactionType` - 入庫/出庫タイプ
 - [x] `ChangeType` - 増加/減少タイプ
+- [x] `MealType` - 食事タイプ（朝食/昼食/夕食）
+- [x] `Ingredient` - 食材（名称、数量、単位、冷蔵庫在庫フラグ）
 
 #### リポジトリインターフェース
 - [x] `FridgeRepository` - 冷蔵庫アイテムリポジトリ
 - [x] `HistoryRepository` - 履歴リポジトリ
+- [x] `MealPlanRepository` - 献立リポジトリ
+- [x] `AllergenRepository` - アレルゲンリポジトリ
 
 ### ✅ Application層（完了）
 
@@ -30,6 +36,10 @@
 - [x] `GetCurrentItemsUseCase` - 現在のアイテム取得
 - [x] `GetHistoryUseCase` - 履歴取得
 - [x] `AnalyzeImageUseCase` - 画像分析
+- [x] `GenerateMealPlanUseCase` - AI献立生成
+- [x] `GetMealPlansUseCase` - 献立一覧取得
+- [x] `GetMealPlanDetailUseCase` - 献立詳細取得
+- [x] `ManageAllergensUseCase` - アレルゲン管理
 
 ### ⚠️ Infrastructure層（スケルトンのみ）
 
@@ -44,10 +54,28 @@
   - [ ] テーブルスキーマ定義が必要
   - [ ] CRUD操作の実装が必要
 
+- [x] `SQLiteMealPlanRepository` - スケルトン実装済み
+  - [ ] 実際のSQLite接続実装が必要
+  - [ ] テーブルスキーマ定義が必要
+  - [ ] CRUD操作の実装が必要
+
+- [x] `SQLiteAllergenRepository` - スケルトン実装済み
+  - [ ] 実際のSQLite接続実装が必要
+  - [ ] テーブルスキーマ定義が必要
+  - [ ] CRUD操作の実装が必要
+
 #### サービス
 - [x] `AIImageAnalyzer` - スケルトン実装済み
   - [ ] 実際のAI API連携が必要
   - [ ] 画像認識処理の実装が必要
+
+- [x] `AIMealPlanGenerator` - スケルトン実装済み
+  - [ ] 実際のAI献立生成API連携が必要
+  - [ ] 冷蔵庫の中身を優先的に使用するロジック
+  - [ ] アレルゲン対応ロジック
+  - [ ] 予算計算ロジック
+  - [ ] カロリー計算ロジック
+  - [ ] 調理手順生成ロジック
 
 ### ⚠️ Interfaces層（スケルトンのみ）
 
@@ -66,6 +94,10 @@
 - [x] `DashboardScreen` - ダッシュボード画面
 - [x] `InputScreen` - 入力画面（3種類の入力方法）
 - [x] `HistoryScreen` - 履歴画面
+- [x] `MealPlanCreateScreen` - 献立作成画面
+- [x] `MealPlanListScreen` - 献立一覧画面
+- [x] `MealPlanDetailScreen` - 献立詳細画面
+- [x] `AllergenManagementScreen` - アレルゲン管理画面
 
 ### ✅ 設定ファイル（完了）
 - [x] `package.json` - 依存関係定義
@@ -122,11 +154,22 @@
 ## ファイル統計
 
 ```
-合計ファイル数: 34
-- TypeScript/TSX: 22
+合計ファイル数: 53
+- TypeScript/TSX: 38
 - 設定ファイル: 9
-- ドキュメント: 3
+- ドキュメント: 4
 ```
+
+## 新機能の追加内容
+
+### 献立作成機能
+1. **AI献立生成**: 冷蔵庫の中身から最大1ヶ月分の献立を自動作成
+2. **アレルゲン対応**: 設定したアレルゲンを避けた献立を生成
+3. **予算管理**: 各献立の目安予算を表示（AIによる推定）
+4. **カロリー管理**: 各献立の目安カロリーを表示（AIによる推定）
+5. **食材管理**: 冷蔵庫にある食材と購入が必要な食材を区別
+6. **調理手順**: 詳細なステップバイステップの調理手順
+7. **料理サイト連携**: 外部の料理サイトへのリンク（オプション）
 
 ## ディレクトリ構造
 
