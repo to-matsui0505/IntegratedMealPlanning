@@ -197,7 +197,7 @@ classDiagram
     MealPlanDetailScreen --> GetMealPlanDetailUseCase
 ```
 
-## ユースケース図（Mermaid）
+## ユースケース図（PlantUML）
 
 ```plantuml
     actor User
