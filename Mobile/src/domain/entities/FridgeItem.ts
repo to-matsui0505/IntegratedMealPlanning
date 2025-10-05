@@ -3,6 +3,12 @@ export enum FridgeItemType {
   OUT = '出庫',
 }
 
+export enum FridgeItemSource {
+  CAMERA = 'CAMERA',
+  RECEIPT = 'RECEIPT',
+  MANUAL = 'MANUAL',
+}
+
 export interface FridgeItem {
   id: string;
   type: FridgeItemType;
@@ -11,5 +17,7 @@ export interface FridgeItem {
   name: string;
   quantity: number;
   unit: string;
+  source?: FridgeItemSource;
+  sourceImageId?: string;
   updatedAt: Date;
 }
