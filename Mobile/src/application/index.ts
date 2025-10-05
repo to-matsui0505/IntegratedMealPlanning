@@ -6,3 +6,5 @@ export * from './AnalyzeImageUseCase';
 export * from './CreateMealPlanUseCase';
 export * from './GetMealPlanUseCase';
 export * from './GetMealPlanDetailUseCase';
+export * from './GetSummaryUseCase';
+export * from './GetActivitiesUseCase';
