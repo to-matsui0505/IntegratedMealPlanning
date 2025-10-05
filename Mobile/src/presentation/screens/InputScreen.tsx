@@ -8,7 +8,11 @@ import { AIImageAnalyzer } from '../../infrastructure/api/AIImageAnalyzer';
 import { FridgeRepositoryImpl } from '../../infrastructure/database/FridgeRepositoryImpl';
 import { ImageTempStore } from '../../infrastructure/storage/ImageTempStore';
 
-export const InputScreen: React.FC = () => {
+interface InputScreenProps {
+  onNavigateBack?: () => void;
+}
+
+export const InputScreen: React.FC<InputScreenProps> = ({ onNavigateBack }) => {
   const [showCameraInput, setShowCameraInput] = useState(false);
 
   // Initialize dependencies
@@ -19,6 +23,17 @@ export const InputScreen: React.FC = () => {
   const analyzeImageUseCase = new AnalyzeImageUseCase(aiImageAnalyzer);
   const addItemUseCase = new AddItemUseCase(fridgeRepository);
 
+  const handleComplete = () => {
+    setShowCameraInput(false);
+    if (onNavigateBack) {
+      onNavigateBack();
+    }
+  };
+
+  const handleCancel = () => {
+    setShowCameraInput(false);
+  };
+
   if (showCameraInput) {
     return (
       <InputCameraScreen
@@ -26,15 +41,21 @@ export const InputScreen: React.FC = () => {
         analyzeImageUseCase={analyzeImageUseCase}
         addItemUseCase={addItemUseCase}
         imageTempStore={imageTempStore}
-        onComplete={() => setShowCameraInput(false)}
-        onCancel={() => setShowCameraInput(false)}
+        onComplete={handleComplete}
+        onCancel={handleCancel}
       />
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>食材登録</Text>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={onNavigateBack} style={styles.backButton}>
+          <Text style={styles.backButtonText}>← 戻る</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>食材登録</Text>
+        <View style={styles.placeholder} />
+      </View>
       <Text style={styles.subtitle}>登録方法を選択してください</Text>
 
       <TouchableOpacity
@@ -65,18 +86,36 @@ export const InputScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: '#F5F5F5',
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#FFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  backButton: {
+    padding: 8,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#007AFF',
+  },
+  placeholder: {
+    width: 60,
+  },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
     color: '#666',
-    marginBottom: 24,
+    margin: 16,
+    marginTop: 8,
   },
   methodButton: {
     backgroundColor: '#FFF',
