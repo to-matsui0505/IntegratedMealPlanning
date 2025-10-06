@@ -19,7 +19,13 @@ import { ActivityRepositoryImpl } from '../../infrastructure/database/ActivityRe
 
 const screenWidth = Dimensions.get('window').width;
 
-export const DashboardScreen: React.FC = () => {
+interface DashboardScreenProps {
+  onNavigateToInput?: () => void;
+}
+
+export const DashboardScreen: React.FC<DashboardScreenProps> = ({
+  onNavigateToInput,
+}) => {
   const [items, setItems] = useState<FridgeItem[]>([]);
   const [summary, setSummary] = useState<Summary[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -196,7 +202,9 @@ export const DashboardScreen: React.FC = () => {
         <TouchableOpacity style={styles.fabSecondary}>
           <Text style={styles.fabText}>献立作成</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.fabPrimary}>
+        <TouchableOpacity
+          style={styles.fabPrimary}
+          onPress={onNavigateToInput}>
           <Text style={styles.fabText}>+ 食材追加</Text>
         </TouchableOpacity>
       </View>
