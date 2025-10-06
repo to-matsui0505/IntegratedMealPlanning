@@ -15,10 +15,61 @@ import { AnalyzeImageUseCase } from '../../application/AnalyzeImageUseCase';
 import { AddItemUseCase } from '../../application/AddItemUseCase';
 import { FridgeItem } from '../../domain/entities/FridgeItem';
 import { ImageTempStore } from '../../infrastructure/storage/ImageTempStore';
+import { Picker } from '../components/Picker';
 
 interface EditableItem extends FridgeItem {
   confidence?: number;
 }
+
+// 大分類の選択肢
+const CATEGORIES = [
+  '野菜類',
+  '肉類',
+  '魚介類',
+  '乳製品',
+  '調味料',
+  '飲料',
+  '果物',
+  '穀類',
+  '卵',
+  '豆類',
+  '加工食品',
+  'その他',
+];
+
+// 小分類の選択肢（大分類に応じて変更可能）
+const SUB_CATEGORIES: { [key: string]: string[] } = {
+  野菜類: ['葉物', '根菜', 'きのこ類', 'その他'],
+  肉類: ['牛肉', '豚肉', '鶏肉', 'ひき肉', 'その他'],
+  魚介類: ['魚', '貝類', '海藻', 'その他'],
+  乳製品: ['牛乳', 'チーズ', 'ヨーグルト', 'バター', 'その他'],
+  調味料: ['液体調味料', '粉末調味料', '油類', 'その他'],
+  飲料: ['水', 'お茶', 'ジュース', 'その他'],
+  果物: ['柑橘類', 'りんご・梨', 'ベリー類', 'その他'],
+  穀類: ['米', 'パン', '麺類', 'その他'],
+  卵: ['鶏卵', 'その他'],
+  豆類: ['大豆', '豆腐', '納豆', 'その他'],
+  加工食品: ['冷凍食品', 'レトルト', '缶詰', 'その他'],
+  その他: ['その他'],
+};
+
+// 単位の選択肢
+const UNITS = [
+  'g',
+  'kg',
+  'ml',
+  'L',
+  '個',
+  '本',
+  '枚',
+  '束',
+  'パック',
+  '袋',
+  '缶',
+  '瓶',
+  '箱',
+  'その他',
+];
 
 interface InputCameraScreenProps {
   cameraDevice: CameraDevice;
@@ -186,59 +237,70 @@ export const InputCameraScreen: React.FC<InputCameraScreenProps> = ({
       {!isAnalyzing && analyzedItems.length > 0 && (
         <View style={styles.itemsSection}>
           <Text style={styles.sectionTitle}>認識された食材</Text>
-          {analyzedItems.map((item, index) => (
-            <View key={index} style={styles.itemCard}>
-              <View style={styles.itemRow}>
-                <Text style={styles.itemLabel}>大分類:</Text>
-                <TextInput
-                  style={styles.itemInput}
-                  value={item.category}
-                  onChangeText={text =>
-                    handleItemEdit(index, 'category', text)
-                  }
-                />
+          {analyzedItems.map((item, index) => {
+            const subCategoryOptions =
+              SUB_CATEGORIES[item.category] || SUB_CATEGORIES['その他'];
+            
+            return (
+              <View key={index} style={styles.itemCard}>
+                <View style={styles.itemRow}>
+                  <Text style={styles.itemLabel}>大分類:</Text>
+                  <Picker
+                    value={item.category}
+                    items={CATEGORIES}
+                    onValueChange={text =>
+                      handleItemEdit(index, 'category', text)
+                    }
+                    placeholder="選択してください"
+                    style={styles.itemInput}
+                  />
+                </View>
+                <View style={styles.itemRow}>
+                  <Text style={styles.itemLabel}>小分類:</Text>
+                  <Picker
+                    value={item.subCategory}
+                    items={subCategoryOptions}
+                    onValueChange={text =>
+                      handleItemEdit(index, 'subCategory', text)
+                    }
+                    placeholder="選択してください"
+                    style={styles.itemInput}
+                  />
+                </View>
+                <View style={styles.itemRow}>
+                  <Text style={styles.itemLabel}>名称:</Text>
+                  <TextInput
+                    style={styles.itemInput}
+                    value={item.name}
+                    onChangeText={text => handleItemEdit(index, 'name', text)}
+                  />
+                </View>
+                <View style={styles.itemRow}>
+                  <Text style={styles.itemLabel}>数量:</Text>
+                  <TextInput
+                    style={styles.itemInputSmall}
+                    value={String(item.quantity)}
+                    keyboardType="numeric"
+                    onChangeText={text =>
+                      handleItemEdit(index, 'quantity', parseFloat(text) || 0)
+                    }
+                  />
+                  <Picker
+                    value={item.unit}
+                    items={UNITS}
+                    onValueChange={text => handleItemEdit(index, 'unit', text)}
+                    placeholder="単位"
+                    style={styles.itemInputSmall}
+                  />
+                </View>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDeleteItem(index)}>
+                  <Text style={styles.deleteButtonText}>削除</Text>
+                </TouchableOpacity>
               </View>
-              <View style={styles.itemRow}>
-                <Text style={styles.itemLabel}>小分類:</Text>
-                <TextInput
-                  style={styles.itemInput}
-                  value={item.subCategory}
-                  onChangeText={text =>
-                    handleItemEdit(index, 'subCategory', text)
-                  }
-                />
-              </View>
-              <View style={styles.itemRow}>
-                <Text style={styles.itemLabel}>名称:</Text>
-                <TextInput
-                  style={styles.itemInput}
-                  value={item.name}
-                  onChangeText={text => handleItemEdit(index, 'name', text)}
-                />
-              </View>
-              <View style={styles.itemRow}>
-                <Text style={styles.itemLabel}>数量:</Text>
-                <TextInput
-                  style={styles.itemInput}
-                  value={String(item.quantity)}
-                  keyboardType="numeric"
-                  onChangeText={text =>
-                    handleItemEdit(index, 'quantity', parseFloat(text) || 0)
-                  }
-                />
-                <TextInput
-                  style={styles.itemInput}
-                  value={item.unit}
-                  onChangeText={text => handleItemEdit(index, 'unit', text)}
-                />
-              </View>
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() => handleDeleteItem(index)}>
-                <Text style={styles.deleteButtonText}>削除</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
+            );
+          })}
           <TouchableOpacity
             style={styles.saveButton}
             onPress={handleSave}
@@ -361,11 +423,10 @@ const styles = StyleSheet.create({
   },
   itemInput: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: '#DDD',
-    borderRadius: 4,
-    padding: 8,
-    fontSize: 14,
+    marginRight: 8,
+  },
+  itemInputSmall: {
+    flex: 1,
     marginRight: 8,
   },
   deleteButton: {
