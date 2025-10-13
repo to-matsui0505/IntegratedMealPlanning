@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,9 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
+import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
 import { CameraDevice } from '../../interfaces/camera/CameraDevice';
 import { AnalyzeImageUseCase } from '../../application/AnalyzeImageUseCase';
 import { AddItemUseCase } from '../../application/AddItemUseCase';
@@ -81,7 +83,7 @@ interface InputCameraScreenProps {
 }
 
 export const InputCameraScreen: React.FC<InputCameraScreenProps> = ({
-  cameraDevice,
+  cameraDevice: _cameraDevice,
   analyzeImageUseCase,
   addItemUseCase,
   imageTempStore,
@@ -94,23 +96,44 @@ export const InputCameraScreen: React.FC<InputCameraScreenProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzedItems, setAnalyzedItems] = useState<EditableItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  
+  const { hasPermission, requestPermission } = useCameraPermission();
+  const device = useCameraDevice('back');
+  const camera = useRef<Camera>(null);
+
+  const handleOpenCamera = async () => {
+    if (!hasPermission) {
+      const granted = await requestPermission();
+      if (!granted) {
+        Alert.alert(
+          'カメラ権限が必要です',
+          'カメラを使用するには設定から権限を許可してください。',
+          [
+            { text: 'キャンセル', style: 'cancel' },
+            { text: '設定を開く', onPress: () => Linking.openSettings() },
+          ],
+        );
+        return;
+      }
+    }
+    setShowCamera(true);
+  };
 
   const handleCapture = async () => {
     try {
-      const hasPermission = await cameraDevice.checkPermission();
-      if (!hasPermission.granted) {
-        const granted = await cameraDevice.requestPermission();
-        if (!granted) {
-          Alert.alert(
-            'カメラ権限が必要です',
-            'カメラを使用するには設定から権限を許可してください。',
-          );
-          return;
-        }
+      if (!camera.current) {
+        throw new Error('Camera not initialized');
       }
 
-      const imagePath = await cameraDevice.captureImage();
+      const photo = await camera.current.takePhoto({
+        flash: 'off',
+        enableShutterSound: true,
+      });
+
+      const imagePath = `file://${photo.path}`;
       setCapturedImagePath(imagePath);
+      setShowCamera(false);
 
       // Save to temporary storage
       const imageId = `img_${Date.now()}`;
@@ -193,7 +216,52 @@ export const InputCameraScreen: React.FC<InputCameraScreenProps> = ({
   const handleRetake = () => {
     setCapturedImagePath(null);
     setAnalyzedItems([]);
+    setShowCamera(true);
   };
+
+  // Show camera view when in capture mode
+  if (showCamera) {
+    if (!device) {
+      return (
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Text style={styles.title}>食材撮影</Text>
+            <TouchableOpacity onPress={() => { setShowCamera(false); onCancel(); }}>
+              <Text style={styles.cancelButton}>✕ 戻る</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.errorSection}>
+            <Text style={styles.errorText}>カメラデバイスが見つかりません</Text>
+          </View>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.cameraContainer}>
+        <Camera
+          ref={camera}
+          style={StyleSheet.absoluteFill}
+          device={device}
+          isActive={showCamera}
+          photo={true}
+        />
+        <View style={styles.cameraControls}>
+          <TouchableOpacity
+            style={styles.cancelCameraButton}
+            onPress={() => setShowCamera(false)}>
+            <Text style={styles.cancelCameraButtonText}>✕ キャンセル</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.captureCircleButton}
+            onPress={handleCapture}>
+            <View style={styles.captureCircleInner} />
+          </TouchableOpacity>
+          <View style={styles.placeholder} />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -208,7 +276,7 @@ export const InputCameraScreen: React.FC<InputCameraScreenProps> = ({
         <View style={styles.captureSection}>
           <TouchableOpacity
             style={styles.captureButton}
-            onPress={handleCapture}>
+            onPress={handleOpenCamera}>
             <Text style={styles.captureButtonText}>📷 撮影する</Text>
           </TouchableOpacity>
           <Text style={styles.helpText}>
@@ -451,5 +519,60 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  cameraContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  cameraControls: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 24,
+    paddingBottom: 48,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  cancelCameraButton: {
+    padding: 12,
+    width: 80,
+  },
+  cancelCameraButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  captureCircleButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 4,
+    borderColor: '#007AFF',
+  },
+  captureCircleInner: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#007AFF',
+  },
+  placeholder: {
+    width: 80,
+  },
+  errorSection: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 });
