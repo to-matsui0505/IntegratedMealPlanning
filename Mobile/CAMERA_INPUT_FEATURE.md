@@ -168,20 +168,59 @@ npm test
 - 全テスト合格
 - 主要なビジネスロジックをカバー
 
-## 今後の拡張
+## 実装状況
 
-### 実装予定
-1. 実際のカメラライブラリ統合（react-native-camera）
-2. Azure OpenAI API接続
-3. オフライン対応
-4. 画像圧縮・最適化
-5. バッチ処理の最適化
+### 完了した実装
+1. ✅ カメラライブラリ統合（react-native-vision-camera）
+   - カメラ権限の確認と要求
+   - カメラプレビュー画面
+   - 写真撮影機能
+   - ネイティブ権限設定（Android/iOS）
+
+### 今後の拡張
+
+#### 実装予定
+1. Azure OpenAI API接続
+2. オフライン対応
+3. 画像圧縮・最適化
+4. バッチ処理の最適化
 
 ### 改善予定
 1. UI/UXの改善
 2. パフォーマンス最適化
 3. エラーハンドリングの拡充
 4. アクセシビリティ対応
+
+## 使用しているライブラリ
+
+### react-native-vision-camera
+- 最新のReact Native対応カメラライブラリ
+- パフォーマンスに優れた実装
+- iOS/Android両対応
+- 詳細: https://github.com/mrousavy/react-native-vision-camera
+
+## セットアップ手順
+
+### iOS
+1. `ios/`ディレクトリでPodのインストール:
+```bash
+cd ios && pod install
+```
+
+2. Info.plistに権限の説明が追加されていることを確認（既に追加済み）:
+   - `NSCameraUsageDescription`
+   - `NSPhotoLibraryAddUsageDescription`
+
+### Android
+1. AndroidManifest.xmlに権限が追加されていることを確認（既に追加済み）:
+   - `android.permission.CAMERA`
+   - `android.hardware.camera`
+   - `android.hardware.camera.autofocus`
+
+2. プロジェクトをビルド:
+```bash
+cd android && ./gradlew clean
+```
 
 ## 設計ドキュメント
 
