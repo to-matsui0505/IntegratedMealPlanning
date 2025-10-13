@@ -1,5 +1,33 @@
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
+# IntegratedMealPlanning Mobile App
+
+統合食事計画アプリのモバイル版。冷蔵庫の食材管理と献立計画をサポートします。
+
+## 主な機能
+
+### 📷 カメラ撮影による食材登録
+- カメラで食材を撮影してAIで自動認識
+- 認識結果の編集・確認
+- SQLiteへの一括保存
+- 詳細: [CAMERA_INPUT_FEATURE.md](./CAMERA_INPUT_FEATURE.md)
+- 実装詳細: [CAMERA_IMPLEMENTATION.md](./CAMERA_IMPLEMENTATION.md)
+
+### 📊 ダッシュボード
+- 食材の在庫状況の可視化
+- 賞味期限の管理
+- 入出庫履歴の表示
+
+### 🍳 献立計画
+- AI による献立提案
+- 食材を活用したレシピ提案
+
+## ドキュメント
+- [ナビゲーションフロー](./NAVIGATION_FLOW.md)
+- [カメラ入力機能](./CAMERA_INPUT_FEATURE.md)
+- [カメラ実装詳細](./CAMERA_IMPLEMENTATION.md)
+- [Pickerコンポーネント](./PICKER_COMPONENT.md)
+
 # Getting Started
 
 > **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
@@ -82,9 +110,34 @@ You've successfully run and modified your React Native App. :partying_face:
 - If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
 - If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
 
+# Testing
+
+## Run Tests
+
+```sh
+npm test
+```
+
+All tests should pass:
+- CameraDevice.test.ts
+- AnalyzeImageUseCase.test.ts
+- ImageTempStore.test.ts
+- App.test.tsx
+- Picker.test.tsx
+
+## Linting
+
+```sh
+npm run lint
+```
+
 # Troubleshooting
 
 If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+
+## Camera Issues
+
+See [CAMERA_IMPLEMENTATION.md](./CAMERA_IMPLEMENTATION.md#トラブルシューティング) for camera-specific troubleshooting.
 
 # Learn More
 
