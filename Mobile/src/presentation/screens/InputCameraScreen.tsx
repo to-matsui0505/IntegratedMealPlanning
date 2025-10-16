@@ -91,6 +91,7 @@ export const InputCameraScreen: React.FC<InputCameraScreenProps> = ({
   const [capturedImagePath, setCapturedImagePath] = useState<string | null>(
     null,
   );
+  const [capturedImageId, setCapturedImageId] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzedItems, setAnalyzedItems] = useState<EditableItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -114,6 +115,7 @@ export const InputCameraScreen: React.FC<InputCameraScreenProps> = ({
 
       // Save to temporary storage
       const imageId = `img_${Date.now()}`;
+      setCapturedImageId(imageId);
       await imageTempStore.saveImage(imageId, 'user1', imagePath);
 
       // Analyze the image
@@ -162,11 +164,8 @@ export const InputCameraScreen: React.FC<InputCameraScreenProps> = ({
       }
 
       // Cleanup temporary image
-      if (capturedImagePath) {
-        const imageId = capturedImagePath.split('/').pop()?.split('.')[0];
-        if (imageId) {
-          await imageTempStore.deleteImage(imageId);
-        }
+      if (capturedImageId) {
+        await imageTempStore.deleteImage(capturedImageId);
       }
 
       Alert.alert('保存完了', '食材を登録しました。', [
@@ -174,6 +173,7 @@ export const InputCameraScreen: React.FC<InputCameraScreenProps> = ({
           text: '続けて入力',
           onPress: () => {
             setCapturedImagePath(null);
+            setCapturedImageId(null);
             setAnalyzedItems([]);
           },
         },
@@ -192,6 +192,7 @@ export const InputCameraScreen: React.FC<InputCameraScreenProps> = ({
 
   const handleRetake = () => {
     setCapturedImagePath(null);
+    setCapturedImageId(null);
     setAnalyzedItems([]);
   };
 
