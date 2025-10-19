@@ -45,6 +45,7 @@ class DIContainer {
   // 外部サービスのシングルトンインスタンス
   private aiImageAnalyzer: AIImageAnalyzer;
   private aiMealPlanGenerator: AIMealPlanGenerator;
+  /** カメラデバイスのシングルトンインスタンス */
   private cameraDevice: CameraDevice;
 
   private constructor() {

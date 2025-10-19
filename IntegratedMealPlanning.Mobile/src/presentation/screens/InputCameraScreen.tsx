@@ -38,7 +38,8 @@ export default function InputCameraScreen({ onClose }: { onClose?: () => void })
   const [items, setItems] = useState<EditableItem[]>([]);
   const [showContinueDialog, setShowContinueDialog] = useState(false);
 
-  const cameraDevice = diContainer.getCameraDevice();
+  // カメラデバイスをDIコンテナから取得（メモ化）
+  const cameraDevice = React.useMemo(() => diContainer.getCameraDevice(), []);
 
   /**
    * カメラで撮影
