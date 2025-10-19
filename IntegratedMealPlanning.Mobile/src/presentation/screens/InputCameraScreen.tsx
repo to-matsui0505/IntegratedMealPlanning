@@ -10,6 +10,7 @@ import {
   Image,
   TouchableOpacity,
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { FridgeItem, ItemType } from '@/src/domain/entities/FridgeItem';
@@ -27,6 +28,64 @@ interface EditableItem {
   unit: string;
   confidence: number;
 }
+
+/**
+ * 大分類の選択肢
+ */
+const CATEGORIES = [
+  '',
+  '肉類',
+  '野菜類',
+  '果物',
+  '魚介類',
+  '乳製品',
+  '卵',
+  '豆類',
+  '穀類',
+  '調味料',
+  '飲料',
+  '酒類',
+  '加工食品',
+  'その他',
+];
+
+/**
+ * 小分類の選択肢（大分類ごと）
+ */
+const SUBCATEGORIES: { [key: string]: string[] } = {
+  '肉類': ['', '牛肉', '豚肉', '鶏肉', 'ひき肉', 'ハム', 'ベーコン', 'ソーセージ', 'その他'],
+  '野菜類': ['', '葉物野菜', '根菜', '果菜', 'きのこ類', 'その他'],
+  '果物': ['', '柑橘類', 'りんご・梨', 'ベリー類', '熱帯果物', 'その他'],
+  '魚介類': ['', '魚', '貝類', '海藻', '加工品', 'その他'],
+  '乳製品': ['', '牛乳', 'チーズ', 'ヨーグルト', 'バター', 'その他'],
+  '卵': ['', '鶏卵', 'その他'],
+  '豆類': ['', '大豆', '豆腐', '納豆', 'その他'],
+  '穀類': ['', '米', 'パン', '麺類', 'その他'],
+  '調味料': ['', '塩・砂糖', '油', 'ソース・ドレッシング', '香辛料', 'その他'],
+  '飲料': ['', '水', 'お茶', 'ジュース', 'その他'],
+  '酒類': ['', 'ビール', '日本酒', 'ワイン', 'その他'],
+  '加工食品': ['', '缶詰', 'レトルト', '冷凍食品', 'その他'],
+  'その他': [''],
+};
+
+/**
+ * 単位の選択肢
+ */
+const UNITS = [
+  '個',
+  '本',
+  '束',
+  'パック',
+  '袋',
+  'g',
+  'kg',
+  'ml',
+  'L',
+  '枚',
+  '切れ',
+  'セット',
+  'その他',
+];
 
 /**
  * 入力画面（カメラ撮影）
@@ -311,22 +370,39 @@ export default function InputCameraScreen({ onClose }: { onClose?: () => void })
 
                 <View style={styles.formGroup}>
                   <ThemedText>大分類</ThemedText>
-                  <TextInput
-                    style={styles.input}
-                    value={item.category}
-                    onChangeText={(value) => updateItem(item.id, 'category', value)}
-                    placeholder="例: 野菜類"
-                  />
+                  <View style={styles.pickerContainer}>
+                    <Picker
+                      selectedValue={item.category}
+                      onValueChange={(value) => {
+                        updateItem(item.id, 'category', value);
+                        // 大分類が変更されたら小分類をリセット
+                        if (!SUBCATEGORIES[value]?.includes(item.subCategory)) {
+                          updateItem(item.id, 'subCategory', '');
+                        }
+                      }}
+                      style={styles.picker}
+                    >
+                      {CATEGORIES.map((cat) => (
+                        <Picker.Item key={cat} label={cat || '選択してください'} value={cat} />
+                      ))}
+                    </Picker>
+                  </View>
                 </View>
 
                 <View style={styles.formGroup}>
                   <ThemedText>小分類</ThemedText>
-                  <TextInput
-                    style={styles.input}
-                    value={item.subCategory}
-                    onChangeText={(value) => updateItem(item.id, 'subCategory', value)}
-                    placeholder="例: 葉物野菜"
-                  />
+                  <View style={styles.pickerContainer}>
+                    <Picker
+                      selectedValue={item.subCategory}
+                      onValueChange={(value) => updateItem(item.id, 'subCategory', value)}
+                      style={styles.picker}
+                      enabled={!!item.category}
+                    >
+                      {(SUBCATEGORIES[item.category] || ['']).map((subCat) => (
+                        <Picker.Item key={subCat} label={subCat || '選択してください'} value={subCat} />
+                      ))}
+                    </Picker>
+                  </View>
                 </View>
 
                 <View style={styles.rowGroup}>
@@ -342,12 +418,17 @@ export default function InputCameraScreen({ onClose }: { onClose?: () => void })
                   </View>
                   <View style={styles.halfWidth}>
                     <ThemedText>単位</ThemedText>
-                    <TextInput
-                      style={styles.input}
-                      value={item.unit}
-                      onChangeText={(value) => updateItem(item.id, 'unit', value)}
-                      placeholder="個"
-                    />
+                    <View style={styles.pickerContainer}>
+                      <Picker
+                        selectedValue={item.unit}
+                        onValueChange={(value) => updateItem(item.id, 'unit', value)}
+                        style={styles.picker}
+                      >
+                        {UNITS.map((unit) => (
+                          <Picker.Item key={unit} label={unit} value={unit} />
+                        ))}
+                      </Picker>
+                    </View>
                   </View>
                 </View>
               </View>
@@ -467,6 +548,17 @@ const styles = StyleSheet.create({
     padding: 12,
     marginTop: 4,
     backgroundColor: 'white',
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    marginTop: 4,
+    backgroundColor: 'white',
+    overflow: 'hidden',
+  },
+  picker: {
+    height: 50,
   },
   actionButtons: {
     marginTop: 24,
