@@ -7,3 +7,4 @@ export { default as InputCameraScreen } from './InputCameraScreen';
 export { default as HistoryScreen } from './HistoryScreen';
 export { default as MealPlanScreen } from './MealPlanScreen';
 export { default as MealPlanDetailScreen } from './MealPlanDetailScreen';
+export { default as SettingsScreen } from './SettingsScreen';

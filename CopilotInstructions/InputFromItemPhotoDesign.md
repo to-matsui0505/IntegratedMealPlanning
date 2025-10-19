@@ -48,28 +48,37 @@
    - No → ダッシュボードへ遷移
 
 ## AI返却JSON定義（契約）
-例:
+Azure OpenAI (gpt-4o等のVisionモデル) から返却されるJSON形式:
+```json
 {
-  "imageId": "uuid",
   "items": [
     {
       "category": "野菜類",
-      "subCategory": "葉物",
+      "subCategory": "葉物野菜",
       "name": "ほうれん草",
       "quantity": 1.5,
       "unit": "束",
       "confidence": 0.87
     },
     ...
-  ],
-  "warnings": ["一部数値は推定です"]
+  ]
 }
+```
 
-- category, subCategory, name: string（可能ならコード化した列挙値も併記）  
-- quantity: number（推定値／null許容）  
-- unit: string（統一辞書にマップする）  
-- confidence: 0.0–1.0（UIで低信頼はハイライト）  
-- warnings: string[]（解析上の注意事項）
+- category: string（大分類: 肉類、野菜類、果物、魚介類、乳製品、卵、豆類、穀類、調味料、飲料、酒類、加工食品、その他）  
+- subCategory: string（小分類: 大分類に応じた詳細分類）  
+- name: string（食材名）  
+- quantity: number（推定値）  
+- unit: string（単位: 個、本、束、パック、袋、g、kg、ml、L、枚、切れ、セット、その他）  
+- confidence: 0.0–1.0（信頼度スコア、UIで低信頼はハイライト）
+
+### Azure OpenAI設定
+AI解析には Azure OpenAI サービスを使用します。設定は「その他」タブで行います：
+- エンドポイント（必須）
+- APIキー（必須）
+- モデル名（必須、推奨: gpt-4o）
+- APIバージョン（必須、デフォルト: 2024-02-15-preview）
+- タイムアウト時間（秒、デフォルト: 30秒）
 
 ## データ仕様（SQLiteへ保存するエンティティ）
 - FridgeItem
@@ -87,11 +96,14 @@
 
 ## ユースケース / クラスマッピング
 - CameraDevice (interfaces/) — 撮影・画像取得  
-- ImageTempStore (infrastructure/) — 一時保存、GC/削除  
-- AnalyzeImageUseCase (application/) — AzureOpenAI呼出し・結果正規化  
+- AnalyzeImageUseCase (application/) — Azure OpenAI呼出し・結果正規化  
+- AzureOpenAIImageAnalyzer (infrastructure/external-services/) — 実際のAzure OpenAI API連携  
+- ConfigRepository (domain/repositories/) — Azure OpenAI設定の保存・取得  
+- InMemoryConfigRepository (infrastructure/repositories/) — 設定の実装（将来的にSecureStoreに移行）  
 - FridgeRepository (domain/infrastructure) — SQLite保存  
 - AddItemUseCase (application/) — バリデーション + 保存 + 履歴生成  
-- InputCameraScreen (presentation/) — UI
+- InputCameraScreen (presentation/) — カメラ撮影・解析UI  
+- SettingsScreen (presentation/) — Azure OpenAI設定UI
 
 ## エラーハンドリング
 - カメラ拒否: 権限説明ダイアログ表示、設定へのリンク  

@@ -2,11 +2,13 @@ import { FridgeRepository } from '@/src/domain/repositories/FridgeRepository';
 import { MealPlanRepository } from '@/src/domain/repositories/MealPlanRepository';
 import { HistoryRepository } from '@/src/domain/repositories/HistoryRepository';
 import { ActivityRepository } from '@/src/domain/repositories/ActivityRepository';
+import { ConfigRepository } from '@/src/domain/repositories/ConfigRepository';
 import { InMemoryFridgeRepository } from '@/src/infrastructure/repositories/InMemoryFridgeRepository';
 import { InMemoryMealPlanRepository } from '@/src/infrastructure/repositories/InMemoryMealPlanRepository';
 import { InMemoryHistoryRepository } from '@/src/infrastructure/repositories/InMemoryHistoryRepository';
 import { InMemoryActivityRepository } from '@/src/infrastructure/repositories/InMemoryActivityRepository';
-import { MockAIImageAnalyzer } from '@/src/infrastructure/external-services/MockAIImageAnalyzer';
+import { InMemoryConfigRepository } from '@/src/infrastructure/repositories/InMemoryConfigRepository';
+import { AzureOpenAIImageAnalyzer } from '@/src/infrastructure/external-services/AzureOpenAIImageAnalyzer';
 import { MockAIMealPlanGenerator } from '@/src/infrastructure/external-services/MockAIMealPlanGenerator';
 import {
   CameraDevice,
@@ -41,6 +43,7 @@ class DIContainer {
   private mealPlanRepository: MealPlanRepository;
   private historyRepository: HistoryRepository;
   private activityRepository: ActivityRepository;
+  private configRepository: ConfigRepository;
 
   // 外部サービスのシングルトンインスタンス
   private aiImageAnalyzer: AIImageAnalyzer;
@@ -54,9 +57,11 @@ class DIContainer {
     this.mealPlanRepository = new InMemoryMealPlanRepository();
     this.historyRepository = new InMemoryHistoryRepository();
     this.activityRepository = new InMemoryActivityRepository();
+    this.configRepository = new InMemoryConfigRepository();
 
-    // 外部サービスの初期化（将来的に実際のAI APIに置き換え可能）
-    this.aiImageAnalyzer = new MockAIImageAnalyzer();
+    // 外部サービスの初期化
+    // Azure OpenAI画像分析サービスを使用（設定が必要）
+    this.aiImageAnalyzer = new AzureOpenAIImageAnalyzer(this.configRepository);
     this.aiMealPlanGenerator = new MockAIMealPlanGenerator();
     this.cameraDevice = new ExpoCameraDevice();
   }
@@ -150,6 +155,13 @@ class DIContainer {
    */
   getCameraDevice(): CameraDevice {
     return this.cameraDevice;
+  }
+
+  /**
+   * ConfigRepositoryのインスタンスを取得
+   */
+  getConfigRepository(): ConfigRepository {
+    return this.configRepository;
   }
 }
 
