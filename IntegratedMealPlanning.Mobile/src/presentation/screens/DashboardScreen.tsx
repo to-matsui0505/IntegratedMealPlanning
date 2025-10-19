@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, FlatList, View, ActivityIndicator, ScrollView } from 'react-native';
+import { StyleSheet, FlatList, View, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { FridgeItem } from '@/src/domain/entities/FridgeItem';
@@ -63,6 +63,16 @@ export default function DashboardScreen() {
     router.push('/mealplan');
   };
 
+  const handleSeeMoreActivities = () => {
+    // TODO: アクティビティ一覧画面への遷移（未実装）
+    console.log('See more activities');
+  };
+
+  const handleSeeMoreInventory = () => {
+    // TODO: 在庫一覧画面への遷移（未実装）
+    console.log('See more inventory');
+  };
+
   const renderItem = ({ item }: { item: FridgeItem }) => (
     <ThemedView style={styles.itemCard}>
       <ThemedText type="subtitle">{item.name}</ThemedText>
@@ -117,7 +127,10 @@ export default function DashboardScreen() {
         <CategoryChart summaries={summaries} />
         
         {/* 最近のアクティビティ */}
-        <RecentActivityList activities={activities} />
+        <RecentActivityList 
+          activities={activities}
+          onSeeMore={handleSeeMoreActivities}
+        />
         
         {/* 在庫リスト */}
         <ThemedView style={styles.inventorySection}>
@@ -127,13 +140,24 @@ export default function DashboardScreen() {
           {items.length === 0 ? (
             <ThemedText style={styles.emptyText}>冷蔵庫にアイテムがありません</ThemedText>
           ) : (
-            <FlatList
-              data={items}
-              renderItem={renderItem}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.list}
-              scrollEnabled={false}
-            />
+            <>
+              <FlatList
+                data={items.slice(0, 5)}
+                renderItem={renderItem}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.list}
+                scrollEnabled={false}
+              />
+              {items.length > 5 && (
+                <TouchableOpacity 
+                  style={styles.seeMoreButton}
+                  onPress={handleSeeMoreInventory}
+                  activeOpacity={0.7}
+                >
+                  <ThemedText style={styles.seeMoreText}>もっと見る</ThemedText>
+                </TouchableOpacity>
+              )}
+            </>
           )}
         </ThemedView>
       </ScrollView>
@@ -191,5 +215,17 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     textAlign: 'center',
+  },
+  seeMoreButton: {
+    marginTop: 12,
+    padding: 12,
+    alignItems: 'center',
+    borderRadius: 6,
+    backgroundColor: '#f8f9fa',
+  },
+  seeMoreText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#007AFF',
   },
 });

@@ -1,18 +1,22 @@
 import React from 'react';
-import { View, StyleSheet, FlatList } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Activity, ActivityType } from '@/src/domain/entities/Activity';
 
 interface RecentActivityListProps {
   activities: Activity[];
+  onSeeMore?: () => void;
 }
 
 /**
  * 最近のアクティビティリストコンポーネント
- * 最近の冷蔵庫操作履歴を表示する
+ * 最近の冷蔵庫操作履歴を表示する（最大5件）
  */
-export function RecentActivityList({ activities }: RecentActivityListProps) {
+export function RecentActivityList({ activities, onSeeMore }: RecentActivityListProps) {
+  const maxDisplayCount = 5;
+  const displayActivities = activities.slice(0, maxDisplayCount);
+  const hasMore = activities.length > maxDisplayCount;
   const getActivityIcon = (type: ActivityType): string => {
     switch (type) {
       case ActivityType.ADD:
@@ -81,13 +85,24 @@ export function RecentActivityList({ activities }: RecentActivityListProps) {
       {activities.length === 0 ? (
         <ThemedText style={styles.emptyText}>アクティビティがありません</ThemedText>
       ) : (
-        <FlatList
-          data={activities}
-          renderItem={renderActivity}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          scrollEnabled={false}
-        />
+        <>
+          <FlatList
+            data={displayActivities}
+            renderItem={renderActivity}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.list}
+            scrollEnabled={false}
+          />
+          {hasMore && (
+            <TouchableOpacity 
+              style={styles.seeMoreButton}
+              onPress={onSeeMore}
+              activeOpacity={0.7}
+            >
+              <ThemedText style={styles.seeMoreText}>もっと見る</ThemedText>
+            </TouchableOpacity>
+          )}
+        </>
       )}
     </ThemedView>
   );
@@ -154,5 +169,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     opacity: 0.7,
     paddingVertical: 20,
+  },
+  seeMoreButton: {
+    marginTop: 12,
+    padding: 12,
+    alignItems: 'center',
+    borderRadius: 6,
+    backgroundColor: '#f8f9fa',
+  },
+  seeMoreText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#007AFF',
   },
 });
