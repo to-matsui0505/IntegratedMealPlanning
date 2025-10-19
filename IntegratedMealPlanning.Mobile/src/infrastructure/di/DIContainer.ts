@@ -9,6 +9,10 @@ import { InMemoryActivityRepository } from '@/src/infrastructure/repositories/In
 import { MockAIImageAnalyzer } from '@/src/infrastructure/external-services/MockAIImageAnalyzer';
 import { MockAIMealPlanGenerator } from '@/src/infrastructure/external-services/MockAIMealPlanGenerator';
 import {
+  CameraDevice,
+  ExpoCameraDevice,
+} from '@/src/interfaces/devices/CameraDevice';
+import {
   AIImageAnalyzer,
   AnalyzeImageUseCase,
 } from '@/src/application/use-cases/AnalyzeImageUseCase';
@@ -41,6 +45,7 @@ class DIContainer {
   // 外部サービスのシングルトンインスタンス
   private aiImageAnalyzer: AIImageAnalyzer;
   private aiMealPlanGenerator: AIMealPlanGenerator;
+  private cameraDevice: CameraDevice;
 
   private constructor() {
     // リポジトリの初期化（将来的にSQLite実装に置き換え可能）
@@ -52,6 +57,7 @@ class DIContainer {
     // 外部サービスの初期化（将来的に実際のAI APIに置き換え可能）
     this.aiImageAnalyzer = new MockAIImageAnalyzer();
     this.aiMealPlanGenerator = new MockAIMealPlanGenerator();
+    this.cameraDevice = new ExpoCameraDevice();
   }
 
   /**
@@ -136,6 +142,13 @@ class DIContainer {
    */
   getGetRecentActivitiesUseCase(): GetRecentActivitiesUseCase {
     return new GetRecentActivitiesUseCase(this.activityRepository);
+  }
+
+  /**
+   * CameraDeviceのインスタンスを取得
+   */
+  getCameraDevice(): CameraDevice {
+    return this.cameraDevice;
   }
 }
 

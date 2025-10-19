@@ -14,7 +14,6 @@ import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { FridgeItem, ItemType } from '@/src/domain/entities/FridgeItem';
 import { diContainer } from '@/src/infrastructure/di/DIContainer';
-import { ExpoCameraDevice } from '@/src/interfaces/devices/CameraDevice';
 
 /**
  * 編集可能な食材アイテム
@@ -39,7 +38,7 @@ export default function InputCameraScreen({ onClose }: { onClose?: () => void })
   const [items, setItems] = useState<EditableItem[]>([]);
   const [showContinueDialog, setShowContinueDialog] = useState(false);
 
-  const cameraDevice = new ExpoCameraDevice();
+  const cameraDevice = diContainer.getCameraDevice();
 
   /**
    * カメラで撮影
