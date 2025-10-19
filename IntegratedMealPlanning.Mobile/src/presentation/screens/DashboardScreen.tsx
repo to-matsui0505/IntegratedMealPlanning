@@ -1,9 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, FlatList, View, ActivityIndicator } from 'react-native';
+import { StyleSheet, FlatList, View, ActivityIndicator, ScrollView } from 'react-native';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { FridgeItem } from '@/src/domain/entities/FridgeItem';
+import { Summary } from '@/src/domain/entities/Summary';
+import { Activity } from '@/src/domain/entities/Activity';
 import { diContainer } from '@/src/infrastructure/di/DIContainer';
+import { CategoryChart } from '@/src/presentation/components/CategoryChart';
+import { RecentActivityList } from '@/src/presentation/components/RecentActivityList';
+import { SummaryCard } from '@/src/presentation/components/SummaryCard';
+import { FloatingActionButtons } from '@/src/presentation/components/FloatingActionButtons';
+import { useRouter } from 'expo-router';
 
 /**
  * ダッシュボード画面
@@ -11,25 +18,49 @@ import { diContainer } from '@/src/infrastructure/di/DIContainer';
  */
 export default function DashboardScreen() {
   const [items, setItems] = useState<FridgeItem[]>([]);
+  const [summaries, setSummaries] = useState<Summary[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    loadItems();
+    loadDashboardData();
   }, []);
 
-  const loadItems = async () => {
+  const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const useCase = diContainer.getGetCurrentItemsUseCase();
-      const fridgeItems = await useCase.execute();
+      
+      // 冷蔵庫アイテムを取得
+      const itemsUseCase = diContainer.getGetCurrentItemsUseCase();
+      const fridgeItems = await itemsUseCase.execute();
       setItems(fridgeItems);
+      
+      // サマリーを取得
+      const summaryUseCase = diContainer.getGetDashboardSummaryUseCase();
+      const summaryData = await summaryUseCase.execute();
+      setSummaries(summaryData);
+      
+      // 最近のアクティビティを取得
+      const activitiesUseCase = diContainer.getGetRecentActivitiesUseCase();
+      const recentActivities = await activitiesUseCase.execute(10);
+      setActivities(recentActivities);
+      
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : '不明なエラーが発生しました');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAddItem = () => {
+    router.push('/input');
+  };
+
+  const handleCreateMealPlan = () => {
+    router.push('/mealplan');
   };
 
   const renderItem = ({ item }: { item: FridgeItem }) => (
@@ -67,19 +98,51 @@ export default function DashboardScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="title" style={styles.title}>
-        冷蔵庫の中身
-      </ThemedText>
-      {items.length === 0 ? (
-        <ThemedText style={styles.emptyText}>冷蔵庫にアイテムがありません</ThemedText>
-      ) : (
-        <FlatList
-          data={items}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <ThemedText type="title" style={styles.title}>
+          ダッシュボード
+        </ThemedText>
+        
+        {/* サマリーカード */}
+        <SummaryCard
+          totalItems={items.length}
+          totalCategories={summaries.length}
         />
-      )}
+        
+        {/* カテゴリ別在庫チャート */}
+        <CategoryChart summaries={summaries} />
+        
+        {/* 最近のアクティビティ */}
+        <RecentActivityList activities={activities} />
+        
+        {/* 在庫リスト */}
+        <ThemedView style={styles.inventorySection}>
+          <ThemedText type="subtitle" style={styles.sectionTitle}>
+            在庫一覧
+          </ThemedText>
+          {items.length === 0 ? (
+            <ThemedText style={styles.emptyText}>冷蔵庫にアイテムがありません</ThemedText>
+          ) : (
+            <FlatList
+              data={items}
+              renderItem={renderItem}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.list}
+              scrollEnabled={false}
+            />
+          )}
+        </ThemedView>
+      </ScrollView>
+      
+      {/* フローティングアクションボタン */}
+      <FloatingActionButtons
+        onAddItem={handleAddItem}
+        onCreateMealPlan={handleCreateMealPlan}
+      />
     </ThemedView>
   );
 }
@@ -87,10 +150,26 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
     padding: 16,
+    gap: 16,
+    paddingBottom: 100, // フローティングボタンのためのスペース
   },
   title: {
-    marginBottom: 16,
+    marginBottom: 8,
+  },
+  inventorySection: {
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  sectionTitle: {
+    marginBottom: 12,
   },
   list: {
     gap: 12,

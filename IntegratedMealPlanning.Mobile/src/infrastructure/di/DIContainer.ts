@@ -1,9 +1,11 @@
 import { FridgeRepository } from '@/src/domain/repositories/FridgeRepository';
 import { MealPlanRepository } from '@/src/domain/repositories/MealPlanRepository';
 import { HistoryRepository } from '@/src/domain/repositories/HistoryRepository';
+import { ActivityRepository } from '@/src/domain/repositories/ActivityRepository';
 import { InMemoryFridgeRepository } from '@/src/infrastructure/repositories/InMemoryFridgeRepository';
 import { InMemoryMealPlanRepository } from '@/src/infrastructure/repositories/InMemoryMealPlanRepository';
 import { InMemoryHistoryRepository } from '@/src/infrastructure/repositories/InMemoryHistoryRepository';
+import { InMemoryActivityRepository } from '@/src/infrastructure/repositories/InMemoryActivityRepository';
 import { MockAIImageAnalyzer } from '@/src/infrastructure/external-services/MockAIImageAnalyzer';
 import { MockAIMealPlanGenerator } from '@/src/infrastructure/external-services/MockAIMealPlanGenerator';
 import {
@@ -20,6 +22,8 @@ import { GetCurrentItemsUseCase } from '@/src/application/use-cases/GetCurrentIt
 import { GetHistoryUseCase } from '@/src/application/use-cases/GetHistoryUseCase';
 import { GetMealPlanUseCase } from '@/src/application/use-cases/GetMealPlanUseCase';
 import { GetMealPlanDetailUseCase } from '@/src/application/use-cases/GetMealPlanDetailUseCase';
+import { GetDashboardSummaryUseCase } from '@/src/application/use-cases/GetDashboardSummaryUseCase';
+import { GetRecentActivitiesUseCase } from '@/src/application/use-cases/GetRecentActivitiesUseCase';
 
 /**
  * 依存性注入コンテナ
@@ -32,6 +36,7 @@ class DIContainer {
   private fridgeRepository: FridgeRepository;
   private mealPlanRepository: MealPlanRepository;
   private historyRepository: HistoryRepository;
+  private activityRepository: ActivityRepository;
 
   // 外部サービスのシングルトンインスタンス
   private aiImageAnalyzer: AIImageAnalyzer;
@@ -42,6 +47,7 @@ class DIContainer {
     this.fridgeRepository = new InMemoryFridgeRepository();
     this.mealPlanRepository = new InMemoryMealPlanRepository();
     this.historyRepository = new InMemoryHistoryRepository();
+    this.activityRepository = new InMemoryActivityRepository();
 
     // 外部サービスの初期化（将来的に実際のAI APIに置き換え可能）
     this.aiImageAnalyzer = new MockAIImageAnalyzer();
@@ -116,6 +122,20 @@ class DIContainer {
    */
   getGetMealPlanDetailUseCase(): GetMealPlanDetailUseCase {
     return new GetMealPlanDetailUseCase(this.mealPlanRepository);
+  }
+
+  /**
+   * GetDashboardSummaryUseCaseのインスタンスを取得
+   */
+  getGetDashboardSummaryUseCase(): GetDashboardSummaryUseCase {
+    return new GetDashboardSummaryUseCase(this.fridgeRepository);
+  }
+
+  /**
+   * GetRecentActivitiesUseCaseのインスタンスを取得
+   */
+  getGetRecentActivitiesUseCase(): GetRecentActivitiesUseCase {
+    return new GetRecentActivitiesUseCase(this.activityRepository);
   }
 }
 

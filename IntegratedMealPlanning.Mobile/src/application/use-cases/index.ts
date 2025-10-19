@@ -9,3 +9,5 @@ export * from './AnalyzeImageUseCase';
 export * from './CreateMealPlanUseCase';
 export * from './GetMealPlanUseCase';
 export * from './GetMealPlanDetailUseCase';
+export * from './GetDashboardSummaryUseCase';
+export * from './GetRecentActivitiesUseCase';
