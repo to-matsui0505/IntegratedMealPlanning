@@ -10,8 +10,7 @@ import {
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { MealPlan } from '@/src/domain/entities/MealPlan';
-import { GetMealPlanDetailUseCase } from '@/src/application/use-cases/GetMealPlanDetailUseCase';
-import { InMemoryMealPlanRepository } from '@/src/infrastructure/repositories/InMemoryMealPlanRepository';
+import { diContainer } from '@/src/infrastructure/di/DIContainer';
 
 /**
  * 献立詳細画面
@@ -26,8 +25,7 @@ export default function MealPlanDetailScreen({ mealPlanId }: { mealPlanId: strin
     const loadData = async () => {
       try {
         setLoading(true);
-        const repository = new InMemoryMealPlanRepository();
-        const useCase = new GetMealPlanDetailUseCase(repository);
+        const useCase = diContainer.getGetMealPlanDetailUseCase();
         const plan = await useCase.execute(mealPlanId);
         setMealPlan(plan);
         setError(null);

@@ -2,10 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, Button, ScrollView, View, Alert, TextInput } from 'react-native';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
-import { CreateMealPlanUseCase } from '@/src/application/use-cases/CreateMealPlanUseCase';
-import { InMemoryFridgeRepository } from '@/src/infrastructure/repositories/InMemoryFridgeRepository';
-import { InMemoryMealPlanRepository } from '@/src/infrastructure/repositories/InMemoryMealPlanRepository';
-import { MockAIMealPlanGenerator } from '@/src/infrastructure/external-services/MockAIMealPlanGenerator';
+import { diContainer } from '@/src/infrastructure/di/DIContainer';
 
 /**
  * 献立作成画面
@@ -35,16 +32,7 @@ export default function MealPlanScreen() {
         .map((a) => a.trim())
         .filter((a) => a.length > 0);
 
-      const fridgeRepository = new InMemoryFridgeRepository();
-      const mealPlanRepository = new InMemoryMealPlanRepository();
-      const aiGenerator = new MockAIMealPlanGenerator();
-
-      const useCase = new CreateMealPlanUseCase(
-        fridgeRepository,
-        mealPlanRepository,
-        aiGenerator
-      );
-
+      const useCase = diContainer.getCreateMealPlanUseCase();
       const mealPlan = await useCase.execute(startDate, endDate, allergenList);
 
       Alert.alert(

@@ -3,8 +3,7 @@ import { StyleSheet, FlatList, View, ActivityIndicator } from 'react-native';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { FridgeItem } from '@/src/domain/entities/FridgeItem';
-import { GetCurrentItemsUseCase } from '@/src/application/use-cases/GetCurrentItemsUseCase';
-import { InMemoryFridgeRepository } from '@/src/infrastructure/repositories/InMemoryFridgeRepository';
+import { diContainer } from '@/src/infrastructure/di/DIContainer';
 
 /**
  * ダッシュボード画面
@@ -22,8 +21,7 @@ export default function DashboardScreen() {
   const loadItems = async () => {
     try {
       setLoading(true);
-      const repository = new InMemoryFridgeRepository();
-      const useCase = new GetCurrentItemsUseCase(repository);
+      const useCase = diContainer.getGetCurrentItemsUseCase();
       const fridgeItems = await useCase.execute();
       setItems(fridgeItems);
       setError(null);

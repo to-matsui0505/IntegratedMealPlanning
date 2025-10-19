@@ -3,8 +3,7 @@ import { StyleSheet, TextInput, Button, ScrollView, View, Alert } from 'react-na
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { FridgeItem, ItemType } from '@/src/domain/entities/FridgeItem';
-import { AddItemUseCase } from '@/src/application/use-cases/AddItemUseCase';
-import { InMemoryFridgeRepository } from '@/src/infrastructure/repositories/InMemoryFridgeRepository';
+import { diContainer } from '@/src/infrastructure/di/DIContainer';
 
 /**
  * 入力画面
@@ -19,19 +18,25 @@ export default function InputScreen() {
 
   const handleAddItem = async () => {
     try {
+      // 数量のバリデーション
+      const quantityNum = parseFloat(quantity);
+      if (isNaN(quantityNum)) {
+        Alert.alert('エラー', '数量には有効な数値を入力してください');
+        return;
+      }
+
       const item: FridgeItem = {
         id: `item-${Date.now()}`,
         type: ItemType.INBOUND,
         category,
         subCategory,
         name,
-        quantity: parseFloat(quantity),
+        quantity: quantityNum,
         unit,
         updatedAt: new Date(),
       };
 
-      const repository = new InMemoryFridgeRepository();
-      const useCase = new AddItemUseCase(repository);
+      const useCase = diContainer.getAddItemUseCase();
       await useCase.execute(item);
 
       Alert.alert('成功', 'アイテムを追加しました');

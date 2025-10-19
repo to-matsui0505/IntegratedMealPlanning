@@ -3,8 +3,7 @@ import { StyleSheet, FlatList, View, ActivityIndicator } from 'react-native';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { HistoryRecord } from '@/src/domain/entities/HistoryRecord';
-import { GetHistoryUseCase } from '@/src/application/use-cases/GetHistoryUseCase';
-import { InMemoryHistoryRepository } from '@/src/infrastructure/repositories/InMemoryHistoryRepository';
+import { diContainer } from '@/src/infrastructure/di/DIContainer';
 
 /**
  * 履歴画面
@@ -22,8 +21,7 @@ export default function HistoryScreen() {
   const loadHistory = async () => {
     try {
       setLoading(true);
-      const repository = new InMemoryHistoryRepository();
-      const useCase = new GetHistoryUseCase(repository);
+      const useCase = diContainer.getGetHistoryUseCase();
       const historyRecords = await useCase.execute();
       setRecords(historyRecords);
       setError(null);
