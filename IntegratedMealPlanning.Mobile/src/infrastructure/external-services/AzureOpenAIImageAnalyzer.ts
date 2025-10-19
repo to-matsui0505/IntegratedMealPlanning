@@ -3,7 +3,7 @@ import {
   ImageAnalysisResult,
 } from '@/src/application/use-cases/AnalyzeImageUseCase';
 import { ConfigRepository } from '@/src/domain/repositories/ConfigRepository';
-import * as FileSystem from 'expo-file-system';
+import { readAsStringAsync, EncodingType } from 'expo-file-system';
 
 /**
  * Azure OpenAIを使用した画像分析サービスの実装
@@ -21,9 +21,9 @@ export class AzureOpenAIImageAnalyzer implements AIImageAnalyzer {
     }
 
     try {
-      // 画像をBase64にエンコード
-      const base64Image = await FileSystem.readAsStringAsync(imageUri, {
-        encoding: 'base64',
+      // 画像をBase64にエンコード（新しいFileSystem APIを使用）
+      const base64Image = await readAsStringAsync(imageUri, {
+        encoding: EncodingType.Base64,
       });
 
       // Azure OpenAI APIにリクエスト
