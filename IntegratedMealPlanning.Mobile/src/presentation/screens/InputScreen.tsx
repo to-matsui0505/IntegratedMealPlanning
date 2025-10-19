@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { StyleSheet, TextInput, Button, ScrollView, View, Alert, TouchableOpacity } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { FridgeItem, ItemType } from '@/src/domain/entities/FridgeItem';
@@ -21,6 +22,13 @@ enum InputMethod {
  */
 export default function InputScreen() {
   const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.SELECT);
+
+  // 画面がフォーカスされるたびに入力方法選択画面に戻す
+  useFocusEffect(
+    useCallback(() => {
+      setInputMethod(InputMethod.SELECT);
+    }, [])
+  );
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [subCategory, setSubCategory] = useState('');
