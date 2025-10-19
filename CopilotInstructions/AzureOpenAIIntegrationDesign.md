@@ -48,45 +48,31 @@
     ↓
 画像URIを取得
     ↓
-Base64エンコード
+ImageManipulatorでBase64エンコード（JPEG形式）
 ```
 
-### 2. Azure OpenAI APIコール
+### 2. Azure OpenAI SDKによるAPI連携
 ```
-エンドポイント: {endpoint}/openai/deployments/{modelName}/chat/completions?api-version={apiVersion}
-メソッド: POST
-ヘッダー:
-  - Content-Type: application/json
-  - api-key: {apiKey}
+使用パッケージ: openai (公式Azure OpenAI SDK)
+初期化: new AzureOpenAI({ endpoint, apiKey, apiVersion })
 ```
 
-### 3. リクエストペイロード
-```json
-{
-  "messages": [
-    {
-      "role": "system",
-      "content": "あなたは食材認識のエキスパートです。画像から食材を認識し、JSON形式で返却してください..."
-    },
-    {
-      "role": "user",
-      "content": [
-        {
-          "type": "text",
-          "text": "この画像に写っている食材を認識して、JSON形式で返却してください。"
-        },
-        {
-          "type": "image_url",
-          "image_url": {
-            "url": "data:image/jpeg;base64,{base64Image}"
-          }
-        }
+### 3. ChatCompletion API呼び出し
+```typescript
+const completion = await client.chat.completions.create({
+  model: config.modelName,
+  messages: [
+    { role: 'system', content: '...' },
+    { 
+      role: 'user', 
+      content: [
+        { type: 'text', text: '...' },
+        { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` }}
       ]
     }
   ],
-  "max_tokens": 1000,
-  "temperature": 0.7
-}
+  max_completion_tokens: 16384,
+});
 ```
 
 ### 4. レスポンス形式
@@ -105,7 +91,14 @@ Base64エンコード
 }
 ```
 
-### 5. エラーハンドリング
+### 5. 使用量とコスト計算
+- APIレスポンスに含まれる `usage` オブジェクトからトークン使用量を取得
+- 入力トークン料金: $0.01 / 1K tokens
+- 出力トークン料金: $0.03 / 1K tokens
+- 開発環境では自動的にコンソールにトークン数と推定課金額を表示
+- 日本円換算も表示（1USD=150円として計算）
+
+### 6. エラーハンドリング
 - **設定未完了**: 「Azure OpenAI の設定が完了していません。「その他」タブから設定を行ってください。」
 - **タイムアウト**: 「タイムアウトしました（{timeoutSeconds}秒）」
 - **API エラー**: 「Azure OpenAI API エラー ({status}): {errorText}」
@@ -145,8 +138,20 @@ interface ConfigRepository {
 class AzureOpenAIImageAnalyzer implements AIImageAnalyzer {
   constructor(private configRepository: ConfigRepository)
   async analyzeImage(imageUri: string): Promise<ImageAnalysisResult>
+  private calculateCost(inputTokens: number, outputTokens: number): number
+  private logDebugInfo(usage: any, cost: number): void
 }
 ```
+
+**使用技術・パッケージ:**
+- `openai` (v4.77.1+): 公式Azure OpenAI SDK
+- `expo-image-manipulator`: 画像のBase64エンコード（JPEG形式）
+- `@azure/identity`: Azure認証（将来的な拡張用）
+
+**主な機能:**
+- Azure OpenAI SDKを使用したVision API呼び出し
+- トークン使用量の取得とコスト計算
+- 開発環境でのデバッグ情報出力（トークン数、課金額）
 
 #### SettingsScreen (Presentation)
 - Azure OpenAI設定の入力画面
@@ -241,8 +246,24 @@ AIImageAnalyzer ← AzureOpenAIImageAnalyzer
 
 ### コスト管理
 - Azure OpenAI APIは従量課金
-- 画像解析は1リクエストあたり約1000トークン消費
+- GPT-4 Vision料金（2024年時点）:
+  - 入力: $0.01 / 1K tokens
+  - 出力: $0.03 / 1K tokens
+- 画像解析は1リクエストあたり約1000-2000トークン消費
+- 開発環境では自動的にコンソールにトークン数と課金額を表示
 - 頻繁な解析によるコスト増加に注意
+
+### デバッグ情報
+開発環境（`__DEV__`が`true`）では、各API呼び出し後に以下の情報をコンソールに出力:
+```
+=== Azure OpenAI API 使用量デバッグ情報 ===
+入力トークン: 1234
+出力トークン: 567
+合計トークン: 1801
+推定課金額: $0.029430 USD
+推定課金額: ¥4.41 JPY (1USD=150円換算)
+=========================================
+```
 
 ### レート制限
 - Azure OpenAIのレート制限に注意
@@ -254,4 +275,10 @@ AIImageAnalyzer ← AzureOpenAIImageAnalyzer
 - モデルのデプロイメントはAzure Portal上で実施
 
 ## まとめ
-この設計により、ユーザーは簡単な設定でAzure OpenAIを利用した高精度な食材認識機能を使用できる。Clean Architectureの原則に従い、将来的な拡張や他のAIサービスへの切り替えも容易に行える柔軟な設計となっている。
+この設計により、ユーザーは簡単な設定でAzure OpenAI SDKを利用した高精度な食材認識機能を使用できる。公式SDKの使用により、エラーハンドリングや認証が標準化され、メンテナンス性が向上している。また、開発時のデバッグ情報により、コスト管理とパフォーマンスの最適化が容易になっている。Clean Architectureの原則に従い、将来的な拡張や他のAIサービスへの切り替えも容易に行える柔軟な設計となっている。
+
+### 主要な技術スタック
+- **Azure OpenAI SDK** (`openai` v4.77.1+): 公式SDKによる標準化されたAPI連携
+- **expo-image-manipulator**: 画像の前処理とBase64エンコード
+- **TypeScript**: 型安全な実装
+- **Clean Architecture**: レイヤー分離による保守性の確保
