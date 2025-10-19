@@ -3,7 +3,7 @@ import {
   ImageAnalysisResult,
 } from '@/src/application/use-cases/AnalyzeImageUseCase';
 import { ConfigRepository } from '@/src/domain/repositories/ConfigRepository';
-import { readAsStringAsync, EncodingType } from 'expo-file-system';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 /**
  * Azure OpenAIを使用した画像分析サービスの実装
@@ -21,10 +21,21 @@ export class AzureOpenAIImageAnalyzer implements AIImageAnalyzer {
     }
 
     try {
-      // 画像をBase64にエンコード（新しいFileSystem APIを使用）
-      const base64Image = await readAsStringAsync(imageUri, {
-        encoding: EncodingType.Base64,
-      });
+      // 画像をBase64にエンコード（ImageManipulatorを使用）
+      const manipulatedImage = await ImageManipulator.manipulateAsync(
+        imageUri,
+        [],
+        { 
+          format: ImageManipulator.SaveFormat.JPEG,
+          base64: true 
+        }
+      );
+
+      if (!manipulatedImage.base64) {
+        throw new Error('画像のBase64変換に失敗しました');
+      }
+
+      const base64Image = manipulatedImage.base64;
 
       // Azure OpenAI APIにリクエスト
       const endpoint = `${config.endpoint}/openai/deployments/${config.modelName}/chat/completions?api-version=${config.apiVersion}`;
