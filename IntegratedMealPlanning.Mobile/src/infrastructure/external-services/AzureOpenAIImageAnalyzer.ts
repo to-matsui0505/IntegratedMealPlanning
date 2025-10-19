@@ -4,12 +4,42 @@ import {
 } from '@/src/application/use-cases/AnalyzeImageUseCase';
 import { ConfigRepository } from '@/src/domain/repositories/ConfigRepository';
 import * as ImageManipulator from 'expo-image-manipulator';
+import { AzureOpenAI } from 'openai';
 
 /**
  * Azure OpenAIを使用した画像分析サービスの実装
  */
 export class AzureOpenAIImageAnalyzer implements AIImageAnalyzer {
   constructor(private configRepository: ConfigRepository) {}
+
+  /**
+   * トークン使用量から課金額を計算（GPT-4 Vision の概算）
+   * @param inputTokens 入力トークン数
+   * @param outputTokens 出力トークン数
+   * @returns 課金額（USD）
+   */
+  private calculateCost(inputTokens: number, outputTokens: number): number {
+    // GPT-4 Vision の料金（2024年時点の概算）
+    const INPUT_TOKEN_PRICE = 0.01 / 1000; // $0.01 per 1K tokens
+    const OUTPUT_TOKEN_PRICE = 0.03 / 1000; // $0.03 per 1K tokens
+    
+    return (inputTokens * INPUT_TOKEN_PRICE) + (outputTokens * OUTPUT_TOKEN_PRICE);
+  }
+
+  /**
+   * デバッグ情報を出力
+   */
+  private logDebugInfo(usage: any, cost: number): void {
+    if (__DEV__) {
+      console.log('=== Azure OpenAI API 使用量デバッグ情報 ===');
+      console.log(`入力トークン: ${usage?.prompt_tokens || 0}`);
+      console.log(`出力トークン: ${usage?.completion_tokens || 0}`);
+      console.log(`合計トークン: ${usage?.total_tokens || 0}`);
+      console.log(`推定課金額: $${cost.toFixed(6)} USD`);
+      console.log(`推定課金額: ¥${(cost * 150).toFixed(2)} JPY (1USD=150円換算)`);
+      console.log('=========================================');
+    }
+  }
 
   async analyzeImage(imageUri: string): Promise<ImageAnalysisResult> {
     // 設定を取得
@@ -37,24 +67,18 @@ export class AzureOpenAIImageAnalyzer implements AIImageAnalyzer {
 
       const base64Image = manipulatedImage.base64;
 
-      // Azure OpenAI APIにリクエスト
-      const endpoint = `${config.endpoint}/openai/deployments/${config.modelName}/chat/completions?api-version=${config.apiVersion}`;
+      // Azure OpenAIクライアントを初期化
+      const client = new AzureOpenAI({
+        endpoint: config.endpoint,
+        apiKey: config.apiKey,
+        apiVersion: config.apiVersion,
+      });
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), config.timeoutSeconds * 1000);
-
-      try {
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'api-key': config.apiKey,
-          },
-          body: JSON.stringify({
-            messages: [
-              {
-                role: 'system',
-                content: `あなたは食材認識のエキスパートです。画像から食材を認識し、以下のJSON形式で返却してください。
+      // ChatCompletionのメッセージを構築
+      const messages: any[] = [
+        {
+          role: 'system',
+          content: `あなたは食材認識のエキスパートです。画像から食材を認識し、以下のJSON形式で返却してください。
 {
   "items": [
     {
@@ -67,77 +91,70 @@ export class AzureOpenAIImageAnalyzer implements AIImageAnalyzer {
     }
   ]
 }`,
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: 'この画像に写っている食材を認識して、JSON形式で返却してください。',
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:image/jpeg;base64,${base64Image}`,
               },
-              {
-                role: 'user',
-                content: [
-                  {
-                    type: 'text',
-                    text: 'この画像に写っている食材を認識して、JSON形式で返却してください。',
-                  },
-                  {
-                    type: 'image_url',
-                    image_url: {
-                      url: `data:image/jpeg;base64,${base64Image}`,
-                    },
-                  },
-                ],
-              },
-            ],
-            max_tokens: 1000,
-            temperature: 0.7,
-          }),
-          signal: controller.signal,
-        });
+            },
+          ],
+        },
+      ];
 
-        clearTimeout(timeoutId);
+      // ChatCompletionを実行
+      const completion = await client.chat.completions.create({
+        model: config.modelName,
+        messages: messages,
+        max_completion_tokens: 16384,
+      });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Azure OpenAI API エラー (${response.status}): ${errorText}`);
-        }
-
-        const data = await response.json();
-
-        // レスポンスからコンテンツを取得
-        const content = data.choices?.[0]?.message?.content;
-        if (!content) {
-          throw new Error('Azure OpenAI から有効なレスポンスが得られませんでした');
-        }
-
-        // JSONを抽出（マークダウンコードブロックの場合は除去）
-        let jsonContent = content.trim();
-        if (jsonContent.startsWith('```json')) {
-          jsonContent = jsonContent.replace(/```json\s*\n?/g, '').replace(/\n?```\s*$/g, '');
-        } else if (jsonContent.startsWith('```')) {
-          jsonContent = jsonContent.replace(/```\s*\n?/g, '').replace(/\n?```\s*$/g, '');
-        }
-
-        // JSONをパース
-        const result = JSON.parse(jsonContent);
-
-        // バリデーション
-        if (!result.items || !Array.isArray(result.items)) {
-          throw new Error('Azure OpenAI のレスポンス形式が正しくありません');
-        }
-
-        return {
-          items: result.items.map((item: any) => ({
-            category: item.category || '',
-            subCategory: item.subCategory || '',
-            name: item.name || '',
-            quantity: Number(item.quantity) || 1,
-            unit: item.unit || '個',
-            confidence: Number(item.confidence) || 0.5,
-          })),
-        };
-      } catch (error: any) {
-        clearTimeout(timeoutId);
-        if (error.name === 'AbortError') {
-          throw new Error(`タイムアウトしました（${config.timeoutSeconds}秒）`);
-        }
-        throw error;
+      // 使用量情報を取得してデバッグ出力
+      const usage = completion.usage;
+      if (usage) {
+        const cost = this.calculateCost(usage.prompt_tokens, usage.completion_tokens);
+        this.logDebugInfo(usage, cost);
       }
+
+      // レスポンスからコンテンツを取得
+      const content = completion.choices?.[0]?.message?.content;
+      if (!content) {
+        throw new Error('Azure OpenAI から有効なレスポンスが得られませんでした');
+      }
+
+      // JSONを抽出（マークダウンコードブロックの場合は除去）
+      let jsonContent = content.trim();
+      if (jsonContent.startsWith('```json')) {
+        jsonContent = jsonContent.replace(/```json\s*\n?/g, '').replace(/\n?```\s*$/g, '');
+      } else if (jsonContent.startsWith('```')) {
+        jsonContent = jsonContent.replace(/```\s*\n?/g, '').replace(/\n?```\s*$/g, '');
+      }
+
+      // JSONをパース
+      const result = JSON.parse(jsonContent);
+
+      // バリデーション
+      if (!result.items || !Array.isArray(result.items)) {
+        throw new Error('Azure OpenAI のレスポンス形式が正しくありません');
+      }
+
+      return {
+        items: result.items.map((item: any) => ({
+          category: item.category || '',
+          subCategory: item.subCategory || '',
+          name: item.name || '',
+          quantity: Number(item.quantity) || 1,
+          unit: item.unit || '個',
+          confidence: Number(item.confidence) || 0.5,
+        })),
+      };
     } catch (error: any) {
       console.error('Azure OpenAI image analysis error:', error);
       throw new Error(`画像解析エラー: ${error.message}`);
