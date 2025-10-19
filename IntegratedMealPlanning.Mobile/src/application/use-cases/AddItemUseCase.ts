@@ -25,4 +25,26 @@ export class AddItemUseCase {
     // アイテムを保存
     await this.fridgeRepository.save(item);
   }
+
+  /**
+   * 複数のアイテムを一括追加する
+   * @param items 追加する冷蔵庫アイテムのリスト
+   */
+  async executeBatch(items: FridgeItem[]): Promise<void> {
+    // 各アイテムの検証
+    for (const item of items) {
+      if (!item.name || item.name.trim() === '') {
+        throw new Error('アイテム名は必須です');
+      }
+
+      if (item.quantity <= 0) {
+        throw new Error('数量は0より大きい値を指定してください');
+      }
+    }
+
+    // アイテムを一括保存
+    for (const item of items) {
+      await this.fridgeRepository.save(item);
+    }
+  }
 }

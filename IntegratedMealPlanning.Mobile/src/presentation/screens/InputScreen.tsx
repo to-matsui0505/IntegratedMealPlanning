@@ -1,15 +1,34 @@
-import React, { useState } from 'react';
-import { StyleSheet, TextInput, Button, ScrollView, View, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { StyleSheet, TextInput, Button, ScrollView, View, Alert, TouchableOpacity } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { FridgeItem, ItemType } from '@/src/domain/entities/FridgeItem';
 import { diContainer } from '@/src/infrastructure/di/DIContainer';
+import InputCameraScreen from './InputCameraScreen';
+
+/**
+ * 入力方法の種類
+ */
+enum InputMethod {
+  SELECT = 'SELECT',
+  CAMERA = 'CAMERA',
+  MANUAL = 'MANUAL',
+}
 
 /**
  * 入力画面
- * 冷蔵庫にアイテムを追加する
+ * 冷蔵庫にアイテムを追加する（カメラ撮影または手入力）
  */
 export default function InputScreen() {
+  const [inputMethod, setInputMethod] = useState<InputMethod>(InputMethod.SELECT);
+
+  // 画面がフォーカスされるたびに入力方法選択画面に戻す
+  useFocusEffect(
+    useCallback(() => {
+      setInputMethod(InputMethod.SELECT);
+    }, [])
+  );
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [subCategory, setSubCategory] = useState('');
@@ -52,11 +71,74 @@ export default function InputScreen() {
     }
   };
 
+  // カメラ入力画面
+  if (inputMethod === InputMethod.CAMERA) {
+    return (
+      <InputCameraScreen onClose={() => setInputMethod(InputMethod.SELECT)} />
+    );
+  }
+
+  // 入力方法選択画面
+  if (inputMethod === InputMethod.SELECT) {
+    return (
+      <ThemedView style={styles.container}>
+        <ScrollView>
+          <ThemedText type="title" style={styles.title}>
+            入力方法を選択
+          </ThemedText>
+
+          <TouchableOpacity
+            style={styles.methodCard}
+            onPress={() => setInputMethod(InputMethod.CAMERA)}
+          >
+            <ThemedText type="subtitle" style={styles.methodTitle}>
+              ① カメラで撮影
+            </ThemedText>
+            <ThemedText style={styles.methodDescription}>
+              食材をカメラで撮影してAI解析により登録
+            </ThemedText>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.methodCard}
+            onPress={() => setInputMethod(InputMethod.MANUAL)}
+          >
+            <ThemedText type="subtitle" style={styles.methodTitle}>
+              ③ 手入力
+            </ThemedText>
+            <ThemedText style={styles.methodDescription}>
+              食材情報を手動で入力して登録
+            </ThemedText>
+          </TouchableOpacity>
+
+          <View style={styles.methodCard}>
+            <ThemedText type="subtitle" style={styles.methodTitle}>
+              ② レシート撮影（未実装）
+            </ThemedText>
+            <ThemedText style={styles.methodDescription}>
+              買い物レシートを撮影して登録
+            </ThemedText>
+          </View>
+        </ScrollView>
+      </ThemedView>
+    );
+  }
+
+  // 手入力画面
   return (
     <ThemedView style={styles.container}>
       <ScrollView>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => setInputMethod(InputMethod.SELECT)}
+          >
+            <ThemedText>← 戻る</ThemedText>
+          </TouchableOpacity>
+        </View>
+
         <ThemedText type="title" style={styles.title}>
-          アイテム追加
+          アイテム追加（手入力）
         </ThemedText>
 
         <View style={styles.formGroup}>
@@ -121,8 +203,28 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
+  header: {
+    marginBottom: 16,
+  },
+  backButton: {
+    padding: 8,
+  },
   title: {
     marginBottom: 24,
+  },
+  methodCard: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  methodTitle: {
+    marginBottom: 8,
+  },
+  methodDescription: {
+    color: '#666',
   },
   formGroup: {
     marginBottom: 16,

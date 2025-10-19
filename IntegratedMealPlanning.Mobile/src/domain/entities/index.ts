@@ -8,3 +8,4 @@ export * from './MealPlanItem';
 export * from './UserAllergen';
 export * from './Activity';
 export * from './Summary';
+export * from './AzureOpenAIConfig';

@@ -28,48 +28,62 @@
 
 ## 処理の流れ（ステップ）
 1. ユーザーが撮影ボタンを押す（CameraDevice呼び出し）  
-2. 取得画像をテンポラリ領域に保存（ファイル名は UUID + timestamp）  
-   - 保存先: アプリ外部キャッシュディレクトリ（プラットフォーム毎に分岐）  
-   - メタ: userId, captureAt を付与  
-3. 画像をAzureOpenAI解析用に送付（AnalyzeImageUseCase）
-   - リクエスト: 画像ファイルパス or base64 + モデル指定 + 推論パラメータ  
-   - タイムアウト、リトライ（最大2回）を実装  
-4. AzureOpenAI からの返却（JSON形式例）
+2. 取得画像URIを取得
+3. 画像をAzure OpenAI解析用に送付（AnalyzeImageUseCase）
+   - expo-image-manipulatorでJPEG形式にしてBase64エンコード
+   - Azure OpenAI SDK (`openai`パッケージ) を使用してAPI呼び出し
+   - タイムアウト設定可能（デフォルト30秒）
+4. Azure OpenAI からの返却（JSON形式例）
    - 仕様は下記「AI返却JSON定義」を参照  
+   - 使用量情報（トークン数）も取得し、開発環境でコスト計算・表示
 5. 解析結果を画面でリスト表示（編集可能）  
    - 各行は未確定状態（ローカルUI状態）  
    - ユーザーが編集/削除/追加可能  
+   - 信頼度が低い（< 0.6）アイテムは警告色で表示
 6. ユーザーが「確定」を押下すると Validate を実行（必須項目チェック、数量の正規化）  
 7. SQLiteへ保存（FridgeRepository.saveを通じて HistoryRecord も生成）  
-   - トランザクションで複数行を一括保存  
-8. テンポラリ画像は即時または一定期間後に削除（プライバシー方針参照）  
-9. 保存完了ダイアログで「連続入力しますか？」を確認
+   - AddItemUseCase.executeBatch で複数行を一括保存
+8. 保存完了ダイアログで「連続入力しますか？」を確認
    - Yes → フロー開始へ（カメラ起動）  
-   - No → ダッシュボードへ遷移
+   - No → 入力方法選択画面へ遷移
 
 ## AI返却JSON定義（契約）
-例:
+Azure OpenAI (gpt-4o等のVisionモデル) から返却されるJSON形式:
+```json
 {
-  "imageId": "uuid",
   "items": [
     {
       "category": "野菜類",
-      "subCategory": "葉物",
+      "subCategory": "葉物野菜",
       "name": "ほうれん草",
       "quantity": 1.5,
       "unit": "束",
       "confidence": 0.87
     },
     ...
-  ],
-  "warnings": ["一部数値は推定です"]
+  ]
 }
+```
 
-- category, subCategory, name: string（可能ならコード化した列挙値も併記）  
-- quantity: number（推定値／null許容）  
-- unit: string（統一辞書にマップする）  
-- confidence: 0.0–1.0（UIで低信頼はハイライト）  
-- warnings: string[]（解析上の注意事項）
+- category: string（大分類: 肉類、野菜類、果物、魚介類、乳製品、卵、豆類、穀類、調味料、飲料、酒類、加工食品、その他）  
+- subCategory: string（小分類: 大分類に応じた詳細分類）  
+- name: string（食材名）  
+- quantity: number（推定値）  
+- unit: string（単位: 個、本、束、パック、袋、g、kg、ml、L、枚、切れ、セット、その他）  
+- confidence: 0.0–1.0（信頼度スコア、UIで低信頼はハイライト）
+
+### Azure OpenAI設定
+AI解析には Azure OpenAI サービスを使用します。設定は「その他」タブで行います：
+- エンドポイント（必須）
+- APIキー（必須）
+- モデル名（必須、推奨: gpt-4o）
+- APIバージョン（必須、デフォルト: 2024-02-15-preview）
+- タイムアウト時間（秒）（デフォルト: 30秒）
+
+**使用技術:**
+- `openai` (v4.77.1+): 公式Azure OpenAI SDK
+- `expo-image-manipulator`: 画像のJPEG変換とBase64エンコード
+- 開発環境では自動的にトークン使用量とコストをコンソール出力
 
 ## データ仕様（SQLiteへ保存するエンティティ）
 - FridgeItem
@@ -87,11 +101,18 @@
 
 ## ユースケース / クラスマッピング
 - CameraDevice (interfaces/) — 撮影・画像取得  
-- ImageTempStore (infrastructure/) — 一時保存、GC/削除  
-- AnalyzeImageUseCase (application/) — AzureOpenAI呼出し・結果正規化  
+- AnalyzeImageUseCase (application/) — Azure OpenAI SDK呼出し・結果正規化  
+- AzureOpenAIImageAnalyzer (infrastructure/external-services/) — 実際のAzure OpenAI SDK連携
+  - `openai` パッケージの `AzureOpenAI` クライアントを使用
+  - `expo-image-manipulator` で画像をJPEG/Base64変換
+  - トークン使用量の取得とコスト計算
+  - 開発環境でのデバッグ情報出力
+- ConfigRepository (domain/repositories/) — Azure OpenAI設定の保存・取得  
+- InMemoryConfigRepository (infrastructure/repositories/) — 設定の実装（将来的にSecureStoreに移行）  
 - FridgeRepository (domain/infrastructure) — SQLite保存  
-- AddItemUseCase (application/) — バリデーション + 保存 + 履歴生成  
-- InputCameraScreen (presentation/) — UI
+- AddItemUseCase (application/) — バリデーション + 一括保存 (executeBatch) + 履歴生成  
+- InputCameraScreen (presentation/) — カメラ撮影・解析UI  
+- SettingsScreen (presentation/) — Azure OpenAI設定UI
 
 ## エラーハンドリング
 - カメラ拒否: 権限説明ダイアログ表示、設定へのリンク  
