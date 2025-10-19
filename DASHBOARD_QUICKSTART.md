@@ -115,9 +115,11 @@ const activities = await useCase.execute(10); // 最新10件
 ```typescript
 // DIContainerでの登録
 class DIContainer {
+  private fridgeRepository: FridgeRepository;
   private activityRepository: ActivityRepository;
   
   constructor() {
+    this.fridgeRepository = new InMemoryFridgeRepository();
     this.activityRepository = new InMemoryActivityRepository();
   }
   
@@ -171,7 +173,7 @@ npm start
 
 ## 🔧 カスタマイズポイント
 
-### 色の変更
+### 色の変更方法
 `CategoryChart.tsx`の`colors`配列を編集:
 ```typescript
 const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', ...];

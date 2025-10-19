@@ -170,13 +170,15 @@ DashboardDesign.mdとApplicationBasicDesign.mdの設計書に基づき、ダッ�
 
 | 要件 | 実装状況 |
 |------|----------|
-| 円グラフ表示（カテゴリ別） | ✅ CategoryChart実装 |
+| 円グラフ表示（カテゴリ別） | ✅ CategoryChart実装（リスト形式の視覚化） |
 | 最近のアクティビティ | ✅ RecentActivityList実装 |
 | 在庫リスト | ✅ DashboardScreen内に実装 |
 | 操作ボタン（食材入力） | ✅ FloatingActionButtons実装 |
 | 操作ボタン（献立作成） | ✅ FloatingActionButtons実装 |
 | サマリー表示 | ✅ SummaryCard実装 |
 | ナビゲーション | ✅ useRouter()で実装 |
+
+**注記**: 円グラフは現在リスト形式で実装されています。将来的にライブラリ（react-native-chart-kit等）を使用して円グラフの視覚化を強化することが可能です。現在の実装は、外部ライブラリへの依存を最小限に抑えながら、必要な情報を明確に表示する設計となっています。
 
 ### ApplicationBasicDesign.md要件
 
