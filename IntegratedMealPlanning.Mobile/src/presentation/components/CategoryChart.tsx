@@ -143,6 +143,18 @@ const styles = StyleSheet.create({
   pieSlice: {
     height: '100%',
   },
+  pieChartContainer: {
+    gap: 8,
+  },
+  pieChart: {
+    borderRadius: 1000,
+    overflow: 'hidden',
+  },
+  pieSegment: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
   chartContainer: {
     gap: 8,
   },
