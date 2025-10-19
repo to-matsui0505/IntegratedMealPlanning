@@ -1,4 +1,4 @@
-import { HistoryRecord } from '../entities/HistoryRecord';
+import { ChangeType, HistoryRecord } from '../entities/HistoryRecord';
 
 /**
  * 履歴リポジトリインターフェース
@@ -30,4 +30,47 @@ export interface HistoryRepository {
    * @returns 該当する履歴記録のリスト
    */
   findByFridgeItemId(fridgeItemId: string): Promise<HistoryRecord[]>;
+
+  /**
+   * 月次で履歴記録を取得する
+   * @param year 年
+   * @param month 月 (1-12)
+   * @param changeType 変更タイプ（オプション）
+   * @returns 該当する履歴記録のリスト
+   */
+  findByMonth(
+    year: number,
+    month: number,
+    changeType?: ChangeType
+  ): Promise<HistoryRecord[]>;
+
+  /**
+   * カテゴリで履歴記録を取得する
+   * @param year 年
+   * @param month 月 (1-12)
+   * @param category 大分類
+   * @param subCategory 小分類（オプション）
+   * @param changeType 変更タイプ（オプション）
+   * @returns 該当する履歴記録のリスト
+   */
+  findByCategory(
+    year: number,
+    month: number,
+    category: string,
+    subCategory?: string,
+    changeType?: ChangeType
+  ): Promise<HistoryRecord[]>;
+
+  /**
+   * 履歴記録を更新する
+   * @param id 履歴記録ID
+   * @param record 更新する履歴記録
+   */
+  update(id: string, record: Partial<HistoryRecord>): Promise<void>;
+
+  /**
+   * 履歴記録を削除する
+   * @param id 履歴記録ID
+   */
+  delete(id: string): Promise<void>;
 }

@@ -1,12 +1,17 @@
-import { FridgeItem } from '@/src/domain/entities/FridgeItem';
+import { FridgeItem, ItemType } from '@/src/domain/entities/FridgeItem';
 import { FridgeRepository } from '@/src/domain/repositories/FridgeRepository';
+import { HistoryRepository } from '@/src/domain/repositories/HistoryRepository';
+import { ChangeType, HistoryRecord } from '@/src/domain/entities/HistoryRecord';
 
 /**
  * アイテム追加ユースケース
  * 冷蔵庫にアイテムを追加する
  */
 export class AddItemUseCase {
-  constructor(private fridgeRepository: FridgeRepository) {}
+  constructor(
+    private fridgeRepository: FridgeRepository,
+    private historyRepository: HistoryRepository
+  ) {}
 
   /**
    * アイテムを追加する
@@ -24,6 +29,20 @@ export class AddItemUseCase {
 
     // アイテムを保存
     await this.fridgeRepository.save(item);
+
+    // 履歴記録を作成
+    const historyRecord: HistoryRecord = {
+      id: `history-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      fridgeItemId: item.id,
+      changeType: item.type === ItemType.INBOUND ? ChangeType.INCREASE : ChangeType.DECREASE,
+      changeAmount: item.quantity,
+      date: item.updatedAt,
+      category: item.category,
+      subCategory: item.subCategory,
+      itemName: item.name,
+      unit: item.unit,
+    };
+    await this.historyRepository.save(historyRecord);
   }
 
   /**
@@ -45,6 +64,20 @@ export class AddItemUseCase {
     // アイテムを一括保存
     for (const item of items) {
       await this.fridgeRepository.save(item);
+      
+      // 履歴記録を作成
+      const historyRecord: HistoryRecord = {
+        id: `history-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        fridgeItemId: item.id,
+        changeType: item.type === ItemType.INBOUND ? ChangeType.INCREASE : ChangeType.DECREASE,
+        changeAmount: item.quantity,
+        date: item.updatedAt,
+        category: item.category,
+        subCategory: item.subCategory,
+        itemName: item.name,
+        unit: item.unit,
+      };
+      await this.historyRepository.save(historyRecord);
     }
   }
 }

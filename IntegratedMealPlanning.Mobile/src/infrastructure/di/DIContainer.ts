@@ -26,6 +26,7 @@ import { AddItemUseCase } from '@/src/application/use-cases/AddItemUseCase';
 import { RemoveItemUseCase } from '@/src/application/use-cases/RemoveItemUseCase';
 import { GetCurrentItemsUseCase } from '@/src/application/use-cases/GetCurrentItemsUseCase';
 import { GetHistoryUseCase } from '@/src/application/use-cases/GetHistoryUseCase';
+import { UpdateHistoryUseCase } from '@/src/application/use-cases/UpdateHistoryUseCase';
 import { GetMealPlanUseCase } from '@/src/application/use-cases/GetMealPlanUseCase';
 import { GetMealPlanDetailUseCase } from '@/src/application/use-cases/GetMealPlanDetailUseCase';
 import { GetDashboardSummaryUseCase } from '@/src/application/use-cases/GetDashboardSummaryUseCase';
@@ -80,14 +81,14 @@ class DIContainer {
    * AddItemUseCaseのインスタンスを取得
    */
   getAddItemUseCase(): AddItemUseCase {
-    return new AddItemUseCase(this.fridgeRepository);
+    return new AddItemUseCase(this.fridgeRepository, this.historyRepository);
   }
 
   /**
    * RemoveItemUseCaseのインスタンスを取得
    */
   getRemoveItemUseCase(): RemoveItemUseCase {
-    return new RemoveItemUseCase(this.fridgeRepository);
+    return new RemoveItemUseCase(this.fridgeRepository, this.historyRepository);
   }
 
   /**
@@ -102,6 +103,13 @@ class DIContainer {
    */
   getGetHistoryUseCase(): GetHistoryUseCase {
     return new GetHistoryUseCase(this.historyRepository);
+  }
+
+  /**
+   * UpdateHistoryUseCaseのインスタンスを取得
+   */
+  getUpdateHistoryUseCase(): UpdateHistoryUseCase {
+    return new UpdateHistoryUseCase(this.historyRepository);
   }
 
   /**

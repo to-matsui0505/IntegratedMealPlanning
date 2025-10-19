@@ -18,4 +18,12 @@ export interface HistoryRecord {
   changeAmount: number;
   /** 日付 */
   date: Date;
+  /** 大分類 */
+  category: string;
+  /** 小分類 */
+  subCategory: string;
+  /** 食材名 */
+  itemName: string;
+  /** 単位 */
+  unit: string;
 }
