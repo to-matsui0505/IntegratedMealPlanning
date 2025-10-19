@@ -81,14 +81,14 @@ class DIContainer {
    * AddItemUseCaseのインスタンスを取得
    */
   getAddItemUseCase(): AddItemUseCase {
-    return new AddItemUseCase(this.fridgeRepository);
+    return new AddItemUseCase(this.fridgeRepository, this.historyRepository);
   }
 
   /**
    * RemoveItemUseCaseのインスタンスを取得
    */
   getRemoveItemUseCase(): RemoveItemUseCase {
-    return new RemoveItemUseCase(this.fridgeRepository);
+    return new RemoveItemUseCase(this.fridgeRepository, this.historyRepository);
   }
 
   /**
